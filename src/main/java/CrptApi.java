@@ -1,6 +1,10 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -15,30 +19,32 @@ public class CrptApi {
         this.requestLimit = requestLimit;
     }
 
-
+    @SneakyThrows
     public void createDocument(Doc document, String signature) {
-
+        String documentToSend = JSONCreator.convertToObject(document);
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(CREATE_URL))
+                .header("content-type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(documentToSend))
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
 
-
-
-
-
     /**
-     * Конвертация из объекта в json
+     * Конвертатор из объекта в json
      */
     class JSONCreator {
-        ObjectMapper objectMapper = new ObjectMapper();
+        static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
-        public String convertToObject(Doc document) {
+        public static String convertToObject(Doc document) {
             return objectMapper.writeValueAsString(document);
         }
     }
 
     /**
-     * Шаблон для объекта
+     * Шаблон объекта для json
      */
     @Data
     @NoArgsConstructor
