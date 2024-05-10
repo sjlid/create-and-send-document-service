@@ -1,5 +1,7 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -27,6 +29,20 @@ public class CrptApi {
     }
 
 
+
+    class JSONReader {
+        ObjectMapper objectMapper = new ObjectMapper();
+        File documentJson = new File("document.json");
+        Doc document;
+
+        {
+            try {
+                document = objectMapper.readValue(documentJson, Doc.class);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     class Doc {
 
