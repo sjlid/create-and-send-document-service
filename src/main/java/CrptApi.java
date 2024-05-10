@@ -21,16 +21,12 @@ public class CrptApi {
 
 
     public void createDocument(Doc document, String signature) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(CREATE_URL))
-                .GET()
-                .build();
+
     }
 
 
     /**
-     * Конвертация json-файлов в джава-класс
+     * Конвертация json-файлов в дджава-объект
      */
     class JSONReader {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -47,7 +43,7 @@ public class CrptApi {
     }
 
     /**
-     * Классы под выходные данные из джейсона
+     * Шаблон для объекта под выходные данные из джейсона
      */
     class Doc {
 
