@@ -29,7 +29,9 @@ public class CrptApi {
     }
 
 
-
+    /**
+     * Конвертация json-файлов в джава-класс
+     */
     class JSONReader {
         ObjectMapper objectMapper = new ObjectMapper();
         File documentJson = new File("document.json");
@@ -44,6 +46,9 @@ public class CrptApi {
         }
     }
 
+    /**
+     * Классы под выходные данные из джейсона
+     */
     class Doc {
 
         private Description description;
