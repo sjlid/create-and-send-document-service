@@ -8,16 +8,14 @@ import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CrptApi {
 
     private TimeUnit timeUnit;
     private int requestLimit;
     private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
-
-    public CrptApi(TimeUnit timeUnit, int requestLimit) {
-        this.timeUnit = timeUnit;
-        this.requestLimit = requestLimit;
-    }
 
     @SneakyThrows
     public void createDocument(Doc document, String signature) {
@@ -27,6 +25,7 @@ public class CrptApi {
                 .header("content-type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(documentToSend))
                 .build();
+
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
