@@ -21,11 +21,13 @@ public class CrptApi {
     private int requestLimit;
     private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
 
+    /**
+     * Ограничитель на кол-во запросов
+     */
     RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
             .limitForPeriod(requestLimit)
             .limitRefreshPeriod(Duration.ofMillis(1))
             .build();
-
     RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
     RateLimiter rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
     Runnable restrictedCall = RateLimiter.decorateRunnable("config1", createDocument());
