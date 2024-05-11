@@ -21,7 +21,7 @@ public class CrptApi {
 
     @SneakyThrows
     public void createDocument(Doc document, String signature) {
-        String documentToSend = JSONCreator.convertToObject(document);
+        String documentToSend = JSONCreator.convertToString(document);
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(CREATE_URL))
                 .header("content-type", "application/json")
@@ -32,13 +32,13 @@ public class CrptApi {
 
 
     /**
-     * Конвертатор из объекта в json
+     * Конвертер из объекта
      */
     class JSONCreator {
         static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
-        public static String convertToObject(Doc document) {
+        public static String convertToString(Doc document) {
             return objectMapper.writeValueAsString(document);
         }
     }
@@ -201,14 +201,6 @@ public class CrptApi {
     class Description {
 
         private String participantInn;
-
-        public String getParticipantInn() {
-            return participantInn;
-        }
-
-        public void setParticipantInn(String participantInn) {
-            this.participantInn = participantInn;
-        }
 
         public Description withParticipantInn(String participantInn) {
             this.participantInn = participantInn;
