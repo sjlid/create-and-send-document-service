@@ -1,10 +1,14 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import lombok.*;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -16,6 +20,17 @@ public class CrptApi {
     private TimeUnit timeUnit;
     private int requestLimit;
     private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
+
+    RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
+            .limitForPeriod(requestLimit)
+            .limitRefreshPeriod(Duration.ofMillis(1))
+            .build();
+
+    RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
+    RateLimiter rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
+    Runnable restrictedCall = RateLimiter.decorateRunnable("config1", createDocument());
+
+
 
     @SneakyThrows
     public void createDocument(Doc document, String signature) {
@@ -29,11 +44,10 @@ public class CrptApi {
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-
     /**
      * Конвертер из объекта
      */
-    class JSONCreator {
+    public class JSONCreator {
         static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
@@ -49,7 +63,7 @@ public class CrptApi {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    class Doc {
+    public class Doc {
 
         private Description description;
         private String docId;
@@ -135,7 +149,7 @@ public class CrptApi {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    class Product {
+    public class Product {
 
         private String certificateDocument;
         private String certificateDocumentDate;
@@ -197,7 +211,7 @@ public class CrptApi {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    class Description {
+    public class Description {
 
         private String participantInn;
 
