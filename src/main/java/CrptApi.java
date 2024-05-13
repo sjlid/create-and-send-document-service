@@ -22,7 +22,7 @@ public class CrptApi {
     private long timeValue;
     private HttpConnector httpConnector;
     private Limiter limiter;
-    private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
+    private final String CREATE_URL = "https://cool.website.ru/api/lk/documents/create";
 
     public CrptApi(TimeUnit timeUnit, int requestLimit) {
         this.timeUnit = timeUnit;
