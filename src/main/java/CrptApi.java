@@ -4,6 +4,7 @@ import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import lombok.*;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,43 +14,70 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class CrptApi {
 
     private TimeUnit timeUnit;
     private int requestLimit;
+    private HttpConnector httpConnector;
     private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
 
-    /**
-     * Ограничитель на кол-во запросов
-     */
-    RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
-            .limitForPeriod(requestLimit)
-            .limitRefreshPeriod(Duration.ofMillis(1))
-            .build();
-    RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
-    RateLimiter rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
-    Runnable restrictedCall = RateLimiter.decorateRunnable("config1", createDocument());
-
-
-
-    @SneakyThrows
-    public void createDocument(Doc document, String signature) {
-        String documentToSend = JSONCreator.convertToString(document);
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(CREATE_URL))
-                .header("content-type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(documentToSend))
-                .build();
-
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+    public CrptApi(TimeUnit timeUnit, int requestLimit) {
+        this.timeUnit = timeUnit;
+        this.requestLimit = requestLimit;
     }
 
     /**
-     * Конвертер из объекта
+     * создание документа
+     */
+    @SneakyThrows
+    public void createDocument(Doc document, String signature) {
+
+        String documentToSend = JSONCreator.convertToString(document);
+        httpConnector.createRequest(documentToSend, CREATE_URL);
+    }
+
+    /**
+     * коннектор по хттп
+     */
+    public class HttpConnector{
+
+        @SneakyThrows
+        public void createRequest(String documentToSend, String url) {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url))
+                    .header("content-type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(documentToSend))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+
+    }
+
+    /**
+     * ограничитель на кол-во запросов
+     */
+    public class Limiter{
+
+        int requestLimit;
+
+        @SneakyThrows
+        public void limitRequests(int requestLimit) {
+            RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
+                    .limitForPeriod(requestLimit)
+                    .limitRefreshPeriod(Duration.ofMillis(1))
+                    .build();
+            RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
+            RateLimiter rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
+            //Runnable restrictedCall = RateLimiter.decorateRunnable("config1", createDocument());
+        }
+    }
+
+    /**
+     * конвертер из объекта
      */
     public class JSONCreator {
+
         static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
@@ -59,7 +87,7 @@ public class CrptApi {
     }
 
     /**
-     * Шаблон объекта для json
+     * шаблон объекта для json
      */
     @Data
     @NoArgsConstructor
