@@ -13,12 +13,15 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-@Data
+@Getter
+@Setter
 public class CrptApi {
 
     private TimeUnit timeUnit;
     private int requestLimit;
+    private long timeValue;
     private HttpConnector httpConnector;
+    private Limiter limiter;
     private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
 
     public CrptApi(TimeUnit timeUnit, int requestLimit) {
@@ -27,26 +30,27 @@ public class CrptApi {
     }
 
     /**
-     * создание документа
+     * создание документа c учетом ограничения по реквестам
      */
     @SneakyThrows
     public void createDocument(Doc document, String signature) {
-
-        String documentToSend = JSONCreator.convertToString(document);
-        httpConnector.createRequest(documentToSend, CREATE_URL);
+        limiter.getLimiter(requestLimit,timeValue).executeRunnable(() -> httpConnector.createRequest(document, CREATE_URL));
     }
 
     /**
      * коннектор по хттп
      */
-    public class HttpConnector{
+    public class HttpConnector {
+
+        static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
-        public void createRequest(String documentToSend, String url) {
+        public void createRequest(Doc document, String url) {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url))
                     .header("content-type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(documentToSend))
+                    .POST(HttpRequest.BodyPublishers.ofString(
+                            objectMapper.writeValueAsString(document)))
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
@@ -57,19 +61,19 @@ public class CrptApi {
     /**
      * ограничитель на кол-во запросов
      */
-    public class Limiter{
-
-        int requestLimit;
+    public class Limiter {
+        RateLimiterRegistry rateLimiterRegistry;
+        RateLimiter rateLimiterWithDefaultConfig;
 
         @SneakyThrows
-        public void limitRequests(int requestLimit) {
+        public RateLimiter getLimiter(int requestLimit, long timeValue) {
             RateLimiterConfig rateLimiterConfig = RateLimiterConfig.custom()
                     .limitForPeriod(requestLimit)
-                    .limitRefreshPeriod(Duration.ofMillis(1))
+                    .limitRefreshPeriod(Duration.ofMillis(timeUnit.toMillis(timeValue)))
                     .build();
-            RateLimiterRegistry rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
-            RateLimiter rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
-            //Runnable restrictedCall = RateLimiter.decorateRunnable("config1", createDocument());
+            rateLimiterRegistry = RateLimiterRegistry.of(rateLimiterConfig);
+            rateLimiterWithDefaultConfig = rateLimiterRegistry.rateLimiter("config1");
+            return rateLimiterWithDefaultConfig;
         }
     }
 
