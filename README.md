@@ -19,4 +19,5 @@ https://cool.website.ru/api/lk/documents/create
 
 Используемый стек:
 - Java 17
-- библиотека Resilience4j
+- Resilience4j
+- Jackson
