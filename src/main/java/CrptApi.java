@@ -4,7 +4,6 @@ import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
 import lombok.*;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -16,13 +15,12 @@ import java.util.concurrent.TimeUnit;
 @Getter
 @Setter
 public class CrptApi {
-
     private TimeUnit timeUnit;
     private int requestLimit;
     private long timeValue;
     private HttpConnector httpConnector;
     private Limiter limiter;
-    private final String CREATE_URL = "https://cool.website.ru/api/lk/documents/create";
+    private final String CREATE_URL = "https://ismp.crpt.ru/api/v3/lk/documents/create";
 
     public CrptApi(TimeUnit timeUnit, int requestLimit) {
         this.timeUnit = timeUnit;
@@ -30,18 +28,17 @@ public class CrptApi {
     }
 
     /**
-     * создание документа c учетом ограничения по реквестам
+     * Create document with limiter for request quantity
      */
     @SneakyThrows
     public void createDocument(Doc document, String signature) {
-        limiter.getLimiter(requestLimit,timeValue).executeRunnable(() -> httpConnector.createRequest(document, CREATE_URL));
+        limiter.getLimiter(requestLimit, timeValue).executeRunnable(() -> httpConnector.createRequest(document, CREATE_URL));
     }
 
     /**
-     * коннектор по хттп
+     * basic http connector
      */
     public class HttpConnector {
-
         static ObjectMapper objectMapper = new ObjectMapper();
 
         @SneakyThrows
@@ -52,14 +49,12 @@ public class CrptApi {
                     .POST(HttpRequest.BodyPublishers.ofString(
                             objectMapper.writeValueAsString(document)))
                     .build();
-
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         }
-
     }
 
     /**
-     * ограничитель на кол-во запросов
+     * request limiter
      */
     public class Limiter {
         RateLimiterRegistry rateLimiterRegistry;
@@ -78,20 +73,7 @@ public class CrptApi {
     }
 
     /**
-     * конвертер из объекта
-     */
-    public class JSONCreator {
-
-        static ObjectMapper objectMapper = new ObjectMapper();
-
-        @SneakyThrows
-        public static String convertToString(Doc document) {
-            return objectMapper.writeValueAsString(document);
-        }
-    }
-
-    /**
-     * шаблон объекта для json
+     * object template
      */
     @Data
     @NoArgsConstructor
